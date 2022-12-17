@@ -2,37 +2,68 @@ using System.Collections;
 using System.Collections.Generic;
 using Photon.Pun;
 using Photon.Realtime;
-using UnityEditor;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class LobbyManager : MonoBehaviourPunCallbacks
 {
-    private string roomName = "player1's lobby";
+    
+    [SerializeField]
+    private Transform roomContent;
+
+    [SerializeField] private Transform lobbyPanel;
 
     IEnumerator AutoRefreshLobby()
     {
         if (PhotonNetwork.IsConnectedAndReady)
         {
-            print("joining lobby..");
-            PhotonNetwork.JoinLobby(TypedLobby.Default);
+            //if is in main lobby
+            if (PhotonNetwork.CurrentRoom == null)
+            {
+                print("refreshing lobby..");
+                PhotonNetwork.JoinLobby(TypedLobby.Default);
+            }
         }
 
-        yield return new WaitForSeconds(5f);
+        yield return new WaitForSeconds(2f);
 
         StartCoroutine(AutoRefreshLobby());
     }
 
-    IEnumerator CreateRoom()
+    public void CreateRoom()
     {
-        yield return new WaitForSeconds(1f);
-
         print(PhotonNetwork.IsConnectedAndReady);
         print(PhotonNetwork.IsConnected);
+
+        RoomOptions roomOptions = new RoomOptions();
+        roomOptions.MaxPlayers = 2;
+        
         if (PhotonNetwork.IsConnectedAndReady)
         {
             print("creating room..");
-            PhotonNetwork.CreateRoom(roomName, new RoomOptions(), TypedLobby.Default);
+            PhotonNetwork.CreateRoom(PhotonNetwork.LocalPlayer.NickName + "'s Lobby", roomOptions, TypedLobby.Default);
         }
+    }
+    
+    public override void OnCreateRoomFailed(short returnCode, string message)
+    {
+        Debug.LogErrorFormat("Room creation failed with error code {0} and error message {1}", returnCode, message);
+    }
+
+    public override void OnCreatedRoom()
+    {
+        print("room created!");
+    }
+
+    public override void OnJoinedRoom()
+    {
+        lobbyPanel.gameObject.SetActive(false);
+    }
+    
+    public override void OnLeftRoom()
+    {
+        lobbyPanel.gameObject.SetActive(true);
     }
     
     // Start is called before the first frame update
@@ -50,15 +81,31 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public override void OnConnectedToMaster()
     {
         print("joined master server");
-        StartCoroutine(CreateRoom());
+        PhotonNetwork.NickName = "Player" + PhotonNetwork.CountOfPlayersOnMaster;
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
     {
-        print(roomList.Count);
+
+        foreach (Transform t in roomContent)
+        {
+            Destroy(t.gameObject);
+        }
+        
         foreach (RoomInfo roomInfo in roomList)
         {
-            print(roomInfo.Name);
+            if (roomInfo.PlayerCount > 0)
+            {
+                GameObject roomPanel = (GameObject) Instantiate(Resources.Load("LobbyPanel"), Vector3.zero, Quaternion.identity, roomContent);
+                roomPanel.transform.Find("LobbyName").GetComponent<TextMeshProUGUI>().text = roomInfo.Name;
+                roomPanel.transform.Find("PlayerText").GetComponent<TextMeshProUGUI>().text = roomInfo.PlayerCount + "/" + roomInfo.MaxPlayers;
+            
+                roomPanel.transform.Find("Button").GetComponent<Button>().onClick.AddListener(() =>
+                {
+                    PhotonNetwork.JoinRoom(roomInfo.Name);
+                });
+            }
+
         }
     }
 }
