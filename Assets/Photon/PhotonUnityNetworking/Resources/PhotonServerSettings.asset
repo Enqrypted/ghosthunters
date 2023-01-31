@@ -41,6 +41,13 @@ MonoBehaviour:
   - RespawnSpaceship
   - JoinGameScene
   - SetState
+  - UpdateTimerTxt
+  - IncreasePlayerPoints
+  - UpdatePointsText
+  - DeleteGhost
+  - DeleteCoin
+  - RemovePlrHeart
+  - GameOver
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

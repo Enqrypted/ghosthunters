@@ -81,7 +81,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public override void OnConnectedToMaster()
     {
         print("joined master server");
-        PhotonNetwork.NickName = "Player" + PhotonNetwork.CountOfPlayersOnMaster;
+        PhotonNetwork.NickName = "Player" + PhotonNetwork.CountOfPlayers;
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)

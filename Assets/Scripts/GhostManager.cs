@@ -1,7 +1,8 @@
 using System.Collections;
-using System.Collections.Generic;
 using Photon.Pun;
+using Photon.Realtime;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class GhostManager : MonoBehaviour
 {
@@ -40,7 +41,56 @@ public class GhostManager : MonoBehaviour
             PhotonView.Get(this).RPC("SetState", RpcTarget.All, isEvil);
             StartCoroutine(walkControl());
         }
-        
+
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (PhotonNetwork.IsMasterClient)
+        {
+            if (collision.gameObject.tag == "Player")
+            {
+                if (isEvil)
+                {
+                    //if hit an evil ghost, lose life and delete ghost
+                    
+                    foreach (Player plr in PhotonNetwork.PlayerList)
+                    {
+
+                        if (plr.NickName == collision.gameObject.name)
+                        {
+                            GameObject.Find("ClientController").GetComponent<ClientController>().GhostKilledPlayer(plr);
+                        }
+                    }
+
+                    PhotonView.Get(this).RPC("DeleteGhost", RpcTarget.All);
+                    
+                }
+                else
+                {
+                    //if hit a normal ghost, delete ghost and increase points
+                    
+                    
+                    foreach (Player plr in PhotonNetwork.PlayerList)
+                    {
+
+                        if (plr.NickName == collision.gameObject.name)
+                        {
+                            GameObject.Find("ClientController").GetComponent<ClientController>().PlayerKilledGhost(plr);
+                        }
+                    }
+
+                    PhotonView.Get(this).RPC("DeleteGhost", RpcTarget.All);
+
+                }
+            }
+        }
+    }
+
+    [PunRPC]
+    public void DeleteGhost()
+    {
+        Destroy(this.gameObject);
     }
 
     // Update is called once per frame
